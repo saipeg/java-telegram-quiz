@@ -20,7 +20,6 @@ public class TestBot extends TelegramLongPollingBot {
             handleMessage(update.getMessage());
         }
 
-
 //        if (update.hasMessage()) {
 //            Message message = update.getMessage();
 //            if (message.hasText()) {
@@ -39,12 +38,25 @@ public class TestBot extends TelegramLongPollingBot {
     private void handleMessage(Message message) {
         //handle command
         if (message.hasText() && message.hasEntities()) {
-            Optional<MessageEntity> commandEntity = message.getEntities().
-                    stream()
-                    .filter(
+            Optional<MessageEntity> commandEntity =
+                    message.getEntities()
+                            .stream()
+                            .filter(
                             e -> "bot_command"
                                     .equals(e.getType())).findFirst();
-            if(commandEntity.isPresent()) {
+
+            if (commandEntity.isPresent()) {
+                String command = message.getText().substring(commandEntity.get().getOffset(), commandEntity.get().getLength());
+                switch (command) {
+                    case "/set_currency":
+                        execute(
+                                SendMessage.builder()
+                                        .text("Please choose Original and Target currencies")
+                                        .chatId(message.getChatId().toString())
+                                        .build());
+
+
+                }
 
             }
 
