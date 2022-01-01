@@ -5,8 +5,11 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.MessageEntity;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
+
+import java.util.Optional;
 
 public class TestBot extends TelegramLongPollingBot {
 
@@ -14,17 +17,38 @@ public class TestBot extends TelegramLongPollingBot {
     @SneakyThrows
     public void onUpdateReceived(Update update) {
         if (update.hasMessage()) {
-            Message message = update.getMessage();
-            if (message.hasText()) {
-                execute(
-                        SendMessage.builder()
-                                .chatId(message.getChatId().toString())
-                                .text("You sent: \n\n" + message.getText())
-                                .build());
+            handleMessage(update.getMessage());
+        }
+
+
+//        if (update.hasMessage()) {
+//            Message message = update.getMessage();
+//            if (message.hasText()) {
+//                execute(
+//                        SendMessage.builder()
+//                                .chatId(message.getChatId().toString())
+//                                .text("You sent: \n\n" + message.getText())
+//                                .build());
+//            }
+//
+//        }
+
+    }
+
+    @SneakyThrows
+    private void handleMessage(Message message) {
+        //handle command
+        if (message.hasText() && message.hasEntities()) {
+            Optional<MessageEntity> commandEntity = message.getEntities().
+                    stream()
+                    .filter(
+                            e -> "bot_command"
+                                    .equals(e.getType())).findFirst();
+            if(commandEntity.isPresent()) {
+
             }
 
         }
-
     }
 
     @Override
