@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.MessageEntity;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -12,17 +13,18 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class TestBot extends TelegramLongPollingBot {
 
     @Override
     @SneakyThrows
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage()) {
+        if (update.hasCallbackQuery()) {
+            handleCallBack(update.getCallbackQuery());
+        }
+
+        else if (update.hasMessage()) {
             handleMessage(update.getMessage());
         }
 
@@ -39,6 +41,16 @@ public class TestBot extends TelegramLongPollingBot {
 //        }
 
     }
+    @SneakyThrows
+    private void handleCallBack(CallbackQuery callbackQuery) {
+        Message message = callbackQuery.getMessage();
+        execute(
+                        SendMessage.builder()
+                                .chatId(message.getChatId().toString())
+                                .text("Чем раньше ляжешь тем раньше встанешь")
+                                .build());
+
+    }
 
     @SneakyThrows
     private void handleMessage(Message message) {
@@ -52,26 +64,25 @@ public class TestBot extends TelegramLongPollingBot {
                                             .equals(e.getType())).findFirst();
 
             if (commandEntity.isPresent()) {
-                String command = message.getText().substring(commandEntity.get().getOffset(), commandEntity.get().getLength());
+                String command = message
+                        .getText()
+                        .substring(commandEntity.get().getOffset(), commandEntity.get().getLength());
                 switch (command) {
                     case "/set_currency":
-                        List<List<InlineKeyboardButton>> buttons = new ArrayList<>();
+                        List<InlineKeyboardButton> buttons = new ArrayList<>();
                         for (Currency currency : Currency.values()) {
-                            buttons.add(Arrays.asList(
+                            buttons.add(
                                     InlineKeyboardButton.builder()
                                             .text(currency.name())
                                             .callbackData("ORIGINAL:" + currency)
-                                            .build(),
-                                    InlineKeyboardButton.builder()
-                                            .text(currency.name())
-                                            .callbackData("TARGET:" + currency)
-                                            .build()));
+                                            .build());
+
                         }
                         execute(
                                 SendMessage.builder()
-                                        .text("Please choose Original and Target currencies")
+                                        .text("Если тебя зовут *, то жми")
                                         .chatId(message.getChatId().toString())
-                                        .replyMarkup(InlineKeyboardMarkup.builder().keyboard().build()
+                                        .replyMarkup(InlineKeyboardMarkup.builder().keyboard(Collections.singleton(buttons)).build()
                                         )
                                         .build()
                         );

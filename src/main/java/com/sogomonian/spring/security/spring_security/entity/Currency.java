@@ -7,9 +7,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Currency {
 
-    USD(431),
-    EUR(451),
-    RUB(456);
+    GET_ADVICE(431);
+//    ANSWER(451);
+//    RUB(456);
 
     private final int id;
-}
+    }
