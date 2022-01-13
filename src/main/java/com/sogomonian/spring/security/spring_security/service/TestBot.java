@@ -2,9 +2,12 @@ package com.sogomonian.spring.security.spring_security.service;
 
 import com.sogomonian.spring.security.spring_security.entity.Currency;
 import lombok.SneakyThrows;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.MessageEntity;
@@ -16,18 +19,18 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import java.util.*;
 
 public class TestBot extends TelegramLongPollingBot {
+    private final CurrencyModeService currencyModeService = CurrencyModeService.getInstance();
+
+    private static final Logger log = LogManager.getLogger();
 
     @Override
     @SneakyThrows
     public void onUpdateReceived(Update update) {
         if (update.hasCallbackQuery()) {
             handleCallBack(update.getCallbackQuery());
-        }
-
-        else if (update.hasMessage()) {
+        } else if (update.hasMessage()) {
             handleMessage(update.getMessage());
         }
-
 //        if (update.hasMessage()) {
 //            Message message = update.getMessage();
 //            if (message.hasText()) {
@@ -41,14 +44,32 @@ public class TestBot extends TelegramLongPollingBot {
 //        }
 
     }
+
     @SneakyThrows
     private void handleCallBack(CallbackQuery callbackQuery) {
         Message message = callbackQuery.getMessage();
         execute(
-                        SendMessage.builder()
-                                .chatId(message.getChatId().toString())
-                                .text("Чем раньше ляжешь тем раньше встанешь")
-                                .build());
+                SendMessage.builder()
+                        .chatId(message.getChatId().toString())
+                        .text("Внимание! Первый вопрос: Какой из этих вариантов ответов считается спорным принципом в ООП?")
+                        .build());
+
+        List<InlineKeyboardButton> buttons = new ArrayList<>();
+        for (Currency currency : Currency.values()) {
+            buttons.add(
+                    InlineKeyboardButton.builder()
+                            .text(currency.name())
+                            .callbackData("ORIGINAL:" + currency)
+                            .build());
+
+        }
+
+        execute(
+                EditMessageReplyMarkup.builder()
+                        .chatId(message.getChatId().toString())
+                        .messageId(message.getMessageId())
+                        .replyMarkup(InlineKeyboardMarkup.builder().keyboard(Collections.singleton(buttons)).build())
+                        .build());
 
     }
 
@@ -68,32 +89,43 @@ public class TestBot extends TelegramLongPollingBot {
                         .getText()
                         .substring(commandEntity.get().getOffset(), commandEntity.get().getLength());
                 switch (command) {
-                    case "/set_currency":
-                        List<InlineKeyboardButton> buttons = new ArrayList<>();
+                    case "/start":
+                        List<List<InlineKeyboardButton>> buttons = new ArrayList<>();
+                        Currency originalCurrency =
+                                currencyModeService.getOriginalCurrency(message.getChatId());
+                        Currency targetCurrency = currencyModeService.getTargetCurrency(message.getChatId());
                         for (Currency currency : Currency.values()) {
                             buttons.add(
-                                    InlineKeyboardButton.builder()
-                                            .text(currency.name())
-                                            .callbackData("ORIGINAL:" + currency)
-                                            .build());
-
+                                    Arrays.asList(
+                                            InlineKeyboardButton.builder()
+                                                    .text(getCurrencyButton(originalCurrency, currency))
+                                                    .callbackData("ORIGINAL:" + currency)
+                                                    .build(),
+                                            InlineKeyboardButton.builder()
+                                                    .text(getCurrencyButton(targetCurrency, currency))
+                                                    .callbackData("TARGET:" + currency)
+                                                    .build()));
                         }
+                        //buttons
                         execute(
                                 SendMessage.builder()
-                                        .text("Если тебя зовут *, то жми")
+                                        .text("Привет! Это тестовый бот для проверки знаний Java. Хочешь испытать удачу?")
                                         .chatId(message.getChatId().toString())
-                                        .replyMarkup(InlineKeyboardMarkup.builder().keyboard(Collections.singleton(buttons)).build()
-                                        )
-                                        .build()
-                        );
-
-
+                                        .replyMarkup(InlineKeyboardMarkup.builder().keyboard(buttons).build())
+                                        .build());
+                        return;
                 }
 
             }
-
         }
     }
+
+    @SneakyThrows
+    private String getCurrencyButton(Currency saved, Currency current) {
+        return saved == current ? current + "✅" : current.name();
+
+    }
+
 
     @Override
     public String getBotUsername() {
