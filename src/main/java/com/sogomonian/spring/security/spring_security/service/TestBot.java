@@ -4,6 +4,7 @@ import com.sogomonian.spring.security.spring_security.entity.Currency;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -21,6 +22,9 @@ import java.util.*;
 public class TestBot extends TelegramLongPollingBot {
     private final CurrencyModeService currencyModeService = CurrencyModeService.getInstance();
 
+    @Autowired
+    QuestionService questionService;
+
     private static final Logger log = LogManager.getLogger();
 
     @Override
@@ -31,17 +35,6 @@ public class TestBot extends TelegramLongPollingBot {
         } else if (update.hasMessage()) {
             handleMessage(update.getMessage());
         }
-//        if (update.hasMessage()) {
-//            Message message = update.getMessage();
-//            if (message.hasText()) {
-//                execute(
-//                        SendMessage.builder()
-//                                .chatId(message.getChatId().toString())
-//                                .text("You sent: \n\n" + message.getText())
-//                                .build());
-//            }
-//
-//        }
 
     }
 
@@ -51,7 +44,7 @@ public class TestBot extends TelegramLongPollingBot {
         execute(
                 SendMessage.builder()
                         .chatId(message.getChatId().toString())
-                        .text("Внимание! Первый вопрос: Какой из этих вариантов ответов считается спорным принципом в ООП?")
+                        .text(questionService.findAll())
                         .build());
 
         List<InlineKeyboardButton> buttons = new ArrayList<>();
@@ -100,10 +93,6 @@ public class TestBot extends TelegramLongPollingBot {
                                             InlineKeyboardButton.builder()
                                                     .text(getCurrencyButton(originalCurrency, currency))
                                                     .callbackData("ORIGINAL:" + currency)
-                                                    .build(),
-                                            InlineKeyboardButton.builder()
-                                                    .text(getCurrencyButton(targetCurrency, currency))
-                                                    .callbackData("TARGET:" + currency)
                                                     .build()));
                         }
                         //buttons
@@ -129,12 +118,12 @@ public class TestBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "@omg_commerce_omg_bot";
+        return "";
     }
 
     @Override
     public String getBotToken() {
-        return "1994356444:AAEEH18cW-sL6O9s6h5mDaUAhE4gVff5g_E";
+        return "";
     }
 
     @SneakyThrows
